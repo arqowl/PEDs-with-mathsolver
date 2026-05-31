@@ -34,6 +34,9 @@ O ambiente configurado via **Dev Containers** (`.devcontainer.json`) já traz to
 pandas>=2.0.0
 torch>=2.1.0
 pynvml>=13.0.1
+```
+
+---
 
 ## 🚀 Como Usar o Monitor de Telemetria
 
@@ -67,3 +70,4 @@ for epoca in range(1, 4):
 
 # 4. Exportar os resultados consolidados para a pasta ./logs
 monitor.salvar_logs()
+```
