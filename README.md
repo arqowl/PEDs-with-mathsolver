@@ -34,3 +34,36 @@ O ambiente configurado via **Dev Containers** (`.devcontainer.json`) já traz to
 pandas>=2.0.0
 torch>=2.1.0
 pynvml>=13.0.1
+
+## 🚀 Como Usar o Monitor de Telemetria
+
+O projeto conta com um gerenciador automático de logs de hardware (`src/telemetria.py`) focado em capturar o comportamento térmico e de consumo (CPU, RAM e GPU) durante o treinamento de modelos.
+
+Para utilizá-lo no seu notebook ou script de treino, basta seguir o exemplo abaixo:
+
+```python
+import time
+import torch.nn as nn
+from src.telemetria import MonitorTreinamento
+
+# 1. Definir a sua arquitetura de IA
+modelo_ia = nn.Sequential(
+    nn.Linear(100, 50),
+    nn.ReLU(),
+    nn.Linear(50, 10)
+)
+
+# 2. Instanciar o monitor
+monitor = MonitorTreinamento(modelo_ia)
+
+# 3. Loop de Treinamento
+for epoca in range(1, 4):
+    monitor.iniciar_epoca()  # Dispara o cronômetro e zera medidores de CPU
+
+    # [Seu processo real de treinamento acontece aqui]
+    time.sleep(2.5)  
+
+    monitor.finalizar_epoca(epoca)  # Captura tempo, uso de CPU/RAM e temperatura da GPU
+
+# 4. Exportar os resultados consolidados para a pasta ./logs
+monitor.salvar_logs()
