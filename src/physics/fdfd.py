@@ -35,31 +35,37 @@ class FDFDSolver:
 
         # --- Operador Laplaciano em Y (com PML) ---
         o_y = np.ones(ny) / delta
-        y = self.sd.ys
-        y_prime = y + (0.5 * delta) # Derivada intercalada na malha
+        y = self.sd.ys                     # nós da malha (ny pontos)
+        # ✅ AJUSTE: as faces/edges intercaladas têm ny+1 pontos (não ny).
+        #    sigma_prime deve viver nessas faces para casar com D_yᵀ (ny, ny+1).
+        y_edges = y[0] - 0.5 * delta + delta * np.arange(ny + 1)  # (ny+1,)
 
         # Perfil de absorção PML
         sigma0 = -np.log(self.Rpml) / (4.0 * (self.sd.dpml ** 3) / 3.0)
-        
+
         # Função para calcular sigma dependendo da posição na malha
         def calc_sigma(xi):
-            return np.where(xi > self.sd.Ly, sigma0 * (xi - self.sd.Ly)**2, 
+            return np.where(xi > self.sd.Ly, sigma0 * (xi - self.sd.Ly)**2,
                    np.where(xi < 0, sigma0 * (xi)**2, 0.0))
 
-        sigma = calc_sigma(y)
-        sigma_prime = calc_sigma(y_prime)
+        sigma = calc_sigma(y)              # nós  -> (ny,)
+        sigma_prime = calc_sigma(y_edges)  # faces -> (ny+1,)
 
         # Matrizes diagonais de atenuação do PML
-        Sigma = sp.diags(1.0 / (1.0 + (1j / omega) * sigma))
-        Sigma_prime = sp.diags(1.0 / (1.0 + (1j / omega) * sigma_prime))
+        Sigma = sp.diags(1.0 / (1.0 + (1j / omega) * sigma))             # (ny, ny)
+        # ✅ AJUSTE: Sigma_prime agora é (ny+1, ny+1), compatível com D_yᵀ.
+        Sigma_prime = sp.diags(1.0 / (1.0 + (1j / omega) * sigma_prime)) # (ny+1, ny+1)
 
-        D_y = sp.diags([-o_y, o_y], [-1, 0], shape=(ny + 1, ny))
-        lap_y = Sigma @ D_y.T @ Sigma_prime @ D_y
+        D_y = sp.diags([-o_y, o_y], [-1, 0], shape=(ny + 1, ny))         # (ny+1, ny)
+        lap_y = Sigma @ D_y.T @ Sigma_prime @ D_y                        # (ny, ny)
 
         # --- Laplaciano 2D (Produto de Kronecker) ---
+        # ✅ AJUSTE: ordem do kron compatível com flatten() row-major de (ny, nx)
+        #    (índice linear = iy*nx + ix). Antes era kron(Ix,lap_y)+kron(lap_x,Iy),
+        #    que corresponde a ordenação Fortran e não casava com a geometria/fonte.
         Ix = sp.eye(nx)
         Iy = sp.eye(ny)
-        lap_2d = sp.kron(Ix, lap_y) + sp.kron(lap_x, Iy)
+        lap_2d = sp.kron(lap_y, Ix) + sp.kron(Iy, lap_x)
 
         # --- Adição da Geometria (Permissividade) ---
         if geometry.size != nx * ny:
@@ -77,9 +83,10 @@ class FDFDSolver:
         """
         J = np.zeros((self.sd.ny, self.sd.nx), dtype=np.complex128)
         
-        # Em Python, indexamos do topo/fim de forma diferente do Julia (end - ...)
-        # O Julia arredonda, vamos manter a mesma lógica
-        source_idx = int(round(self.sd.ny - (self.sd.dpml + self.sd.source) * self.sd.resolution))
+        # ✅ AJUSTE: Julia usa índice 1-based (J[round(end-(dpml+source)*res), :]).
+        #    Em NumPy (0-based) é o mesmo cálculo MENOS 1, senão a fonte fica
+        #    uma linha deslocada em relação ao coarse.jl original.
+        source_idx = int(round(self.sd.ny - (self.sd.dpml + self.sd.source) * self.sd.resolution)) - 1
         J[source_idx, :] = 1j * self.sd.omega * self.sd.resolution
         
         return J.flatten()
@@ -89,7 +96,8 @@ class FDFDSolver:
         Gera a máscara booleana onde a transmissão complexa será medida.
         """
         M = np.zeros((self.sd.ny, self.sd.nx), dtype=bool)
-        monitor_idx = int(round(self.sd.ny - (self.sd.dpml + self.sd.monitor) * self.sd.resolution))
+        # ✅ AJUSTE: mesma correção 1-based -> 0-based do source.
+        monitor_idx = int(round(self.sd.ny - (self.sd.dpml + self.sd.monitor) * self.sd.resolution)) - 1
         M[monitor_idx, :] = True
         return M
 

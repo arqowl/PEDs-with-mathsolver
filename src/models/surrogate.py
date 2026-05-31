@@ -42,8 +42,9 @@ class PEDSModel(nn.Module):
             gen_layers.append(LambdaLayer(post_fn))
         self.mgen = nn.Sequential(*gen_layers)
 
-        # --- Peso de combinação treinável ---
-        self.cw = nn.Parameter(torch.tensor([0.5]))
+        # ✅ AJUSTE: inicia cw=0 -> w=sigmoid(0)=0.5 (balanceado). Com cw=0.5 e
+        #    multfact=100, w=sigmoid(50)≈1 saturava e o gradiente de cw morria.
+        self.cw = nn.Parameter(torch.tensor([0.0]))
         # ✅ AJUSTE: guarda multfact para reproduzir w = sigmoid(cw·multfact) do Julia
         self.multfact = float(nn_struct.multfact)
 
