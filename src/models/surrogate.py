@@ -29,34 +29,50 @@ def build_dense_block(in_dims: List[int], out_dims: List[int], funcs: List[Calla
 
 class PEDSModel(nn.Module):
     """
-    Equivalente à função `initmodel`.
-    Encapsula o Gerador, a Rede de Variância e o Peso de Combinação.
+    Equivalente a `initmodel` do Julia.
+    Encapsula o Gerador (mgen), a Rede de Variância (mvar) e o peso de
+    combinação treinável cw. Expõe a combinação física do PEDS.
     """
     def __init__(self, nn_struct: NNstruct):
         super().__init__()
-        
-        # --- Modelo Gerador (Generator) ---
-        gen_layers = []
-        gen_layers.append(build_dense_block(nn_struct.inGen, nn_struct.outGen, nn_struct.funGen))
+
+        # --- Gerador (Generator) ---
+        gen_layers = [build_dense_block(nn_struct.inGen, nn_struct.outGen, nn_struct.funGen)]
         for post_fn in nn_struct.postGen:
             gen_layers.append(LambdaLayer(post_fn))
         self.mgen = nn.Sequential(*gen_layers)
-        
-        # --- Peso de Combinação (Combining Weight) ---
-        # Definido como nn.Parameter para garantir que, se for treinável no futuro,
-        # o PyTorch consiga rastrear o gradiente. Inicializado como 0.5.
+
+        # --- Peso de combinação treinável ---
         self.cw = nn.Parameter(torch.tensor([0.5]))
-        
-        # --- Modelo de Variância (Variance) ---
-        var_layers = []
-        var_layers.append(LambdaLayer(nn_struct.preVar))
+        # ✅ AJUSTE: guarda multfact para reproduzir w = sigmoid(cw·multfact) do Julia
+        self.multfact = float(nn_struct.multfact)
+
+        # --- Rede de Variância (mvar) ---
+        var_layers = [LambdaLayer(nn_struct.preVar)]
         var_layers.append(build_dense_block(nn_struct.inVar, nn_struct.outVar, nn_struct.funVar))
         self.mvar = nn.Sequential(*var_layers)
 
-    def forward(self, *args):
-        # O forward não é invocado diretamente de forma simples no PEDS
-        # pois o fluxo de dados intercala o simulador físico.
-        raise NotImplementedError("Use os submódulos .mgen e .mvar diretamente no loop de treinamento PEDS.")
+    # ✅ AJUSTE: peso escalar de combinação (antes inexistente)
+    def weight(self) -> torch.Tensor:
+        return torch.sigmoid(self.cw * self.multfact)
+
+    # ✅ AJUSTE: combinação física do PEDS G = w·NN(p) + (1-w)·coarse(p)
+    def combine_geometry(self, p: torch.Tensor, coarse: torch.Tensor) -> torch.Tensor:
+        """
+        p:      entrada da rede (B, inGen[0]).
+        coarse: geometria física de baixa fidelidade já no shape (B, ny, nx).
+        Retorna a permissividade combinada (B, ny, nx).
+        """
+        generated = self.mgen(p)                 # (B, ny, nx) após postGen reshape
+        w = self.weight()
+        return w * generated + (1.0 - w) * coarse
+
+    # ✅ AJUSTE: forward útil (antes só levantava NotImplementedError).
+    #   Retorna a geometria combinada e a variância prevista.
+    def forward(self, p: torch.Tensor, coarse: torch.Tensor):
+        eps = self.combine_geometry(p, coarse)
+        vp = self.mvar(eps)                      # mvar atua sobre a geometria combinada
+        return eps, vp
 
 class BaselineModel(nn.Module):
     """
