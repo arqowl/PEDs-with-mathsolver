@@ -1,0 +1,23 @@
+{
+    "name": "PEDS Python Stack Architecture",
+    "image": "pytorch/pytorch:2.1.0-cuda11.8-cudnn8-runtime",
+    // Instala o Git e ferramentas essenciais direto no sistema operacional do container
+    "features": {
+        "ghcr.io/devcontainers/features/git:1": {
+            "version": "latest"
+        }
+    },
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-python.python",
+                "ms-python.vscode-pylance",
+                "ms-toolsai.jupyter"
+            ]
+        }
+    },
+    "runArgs": [
+        "--gpus", "device=0"
+    ],
+    "postCreateCommand": "pip install --upgrade pip && pip install -r requirements.txt"
+}
