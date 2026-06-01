@@ -15,6 +15,12 @@ import torch.nn.functional as F
 from torch.optim import Adam
 import matplotlib.pyplot as plt  # backend padrão: renderiza inline no notebook
 
+try:                                   # telemetria opcional (não quebra sem GPU/pynvml)
+    from src.telemetria import MonitorTreinamento
+    _HAS_TELE = True
+except Exception:
+    _HAS_TELE = False
+
 from src.physics.diffusion_solver import (
     DiffusionSim, DifferentiableDiffusion, generatepores,
 )
@@ -111,11 +117,16 @@ def load_data(data_root, name, device):
 
 
 # ----------------------- treino com tracking -----------------------
-def _train_one(model, Xt, yt, Xtest, ytest, epochs, lr, batch, track_every):
+def _train_one(model, Xt, yt, Xtest, ytest, epochs, lr, batch, track_every,
+               tele_name=None, return_preds=False):
     opt = Adam(model.parameters(), lr=lr)
     n = Xt.shape[0]
-    hist_ep, hist_fe = [], []
+    hist_ep, hist_fe, hist_preds = [], [], []
+    mon = None
+    if tele_name and _HAS_TELE:
+        mon = MonitorTreinamento(model); mon.modelo_name = tele_name
     for ep in range(epochs):
+        if mon: mon.iniciar_epoca()
         model.train()
         perm = torch.randperm(n, device=Xt.device)
         for s in range(0, n, batch):
@@ -125,42 +136,86 @@ def _train_one(model, Xt, yt, Xtest, ytest, epochs, lr, batch, track_every):
             loss = huber(pred, yt[idx])
             loss.backward()
             opt.step()
+        if mon: mon.finalizar_epoca(ep + 1)
         if ep % track_every == 0 or ep == epochs - 1:
             model.eval()
             with torch.no_grad():
-                fe = fractional_error(model(Xtest), ytest)
-            hist_ep.append(ep + 1); hist_fe.append(fe)
+                p = model(Xtest)
+            hist_ep.append(ep + 1); hist_fe.append(fractional_error(p, ytest))
+            if return_preds:
+                hist_preds.append(p.detach())
+    if mon: mon.salvar_logs()
+    if return_preds:
+        return hist_ep, hist_fe, hist_preds
     return hist_ep, hist_fe
+
+
+def _train_ensemble(make_model, K, Xt, yt, Xtest, ytest, epochs, lr, batch,
+                    track_every, seed, ytest_ref, tele_prefix=None):
+    """Treina K modelos (seeds distintos) e combina por época: a predição do
+    ensemble é a MÉDIA das predições dos K (como no paper). Devolve a curva de
+    FE do ensemble e o w médio (quando o modelo tem peso de mistura)."""
+    preds_by_member, ws, ep_ref = [], [], None
+    for k in range(K):
+        torch.manual_seed(seed + k)
+        m = make_model()
+        tele = f"{tele_prefix}_m{k}" if tele_prefix else None
+        ep, _, preds = _train_one(m, Xt, yt, Xtest, ytest, epochs, lr, batch,
+                                  track_every, tele_name=tele, return_preds=True)
+        ep_ref = ep; preds_by_member.append(preds)
+        if hasattr(m, "weight"):
+            ws.append(float(m.weight().item()))
+    ens_fe = []
+    for j in range(len(ep_ref)):
+        mean_pred = torch.stack([preds_by_member[k][j] for k in range(K)]).mean(0)
+        ens_fe.append(fractional_error(mean_pred, ytest_ref))
+    w_mean = (sum(ws) / len(ws)) if ws else float("nan")
+    return ep_ref, ens_fe, w_mean
 
 
 def run_diffusion_experiment(name, data_root, device="cpu",
                              epochs=200, lr=5e-5, batch=64, ninit=1088,
-                             track_every=5, seed=0):
-    """Treina baseline e PEDS, devolve histórico de FE por época e FEs finais."""
+                             track_every=5, seed=0, telemetry=False, n_ensemble=1):
+    """Treina baseline e PEDS, devolve histórico de FE por época e FEs finais.
+    n_ensemble>1: a predição é a média de n_ensemble modelos (como no paper)."""
     cfg = EXPERIMENTS[name]
     res = cfg["res"]
     sim = DiffusionSim(res)
     (Xt, yt), _, (Xtest, ytest) = load_data(data_root, cfg["data"], device)
     Xt, yt = Xt[:ninit], yt[:ninit]      # regime de poucos dados (~10³)
+    tag = name.replace("(", "").replace(")", "")
+    cw0 = 0.05 if "Fourier" in name else 0.45
 
-    torch.manual_seed(seed)
-    peds = DiffusionPEDS(res, sim, cw_init=(0.05 if "Fourier" in name else 0.45)).to(device)
-    ep_p, fe_p = _train_one(peds, Xt, yt, Xtest, ytest, epochs, lr, batch, track_every)
-
-    torch.manual_seed(seed)
-    base = DiffusionBaseline(res).to(device)
-    ep_b, fe_b = _train_one(base, Xt, yt, Xtest, ytest, epochs, lr, batch, track_every)
+    if n_ensemble == 1:
+        torch.manual_seed(seed)
+        peds = DiffusionPEDS(res, sim, cw_init=cw0).to(device)
+        ep_p, fe_p = _train_one(peds, Xt, yt, Xtest, ytest, epochs, lr, batch, track_every,
+                                tele_name=(f"{tag}_PEDS" if telemetry else None))
+        w_val = float(peds.weight().item())
+        torch.manual_seed(seed)
+        base = DiffusionBaseline(res).to(device)
+        ep_b, fe_b = _train_one(base, Xt, yt, Xtest, ytest, epochs, lr, batch, track_every,
+                                tele_name=(f"{tag}_NNonly" if telemetry else None))
+    else:
+        ep_p, fe_p, w_val = _train_ensemble(
+            lambda: DiffusionPEDS(res, sim, cw_init=cw0).to(device), n_ensemble,
+            Xt, yt, Xtest, ytest, epochs, lr, batch, track_every, seed, ytest,
+            tele_prefix=(f"{tag}_PEDS" if telemetry else None))
+        ep_b, fe_b, _ = _train_ensemble(
+            lambda: DiffusionBaseline(res).to(device), n_ensemble,
+            Xt, yt, Xtest, ytest, epochs, lr, batch, track_every, seed, ytest,
+            tele_prefix=(f"{tag}_NNonly" if telemetry else None))
 
     # FE low-fidelity (coarse puro, w=0) para a Tabela 3
+    solver = DifferentiableDiffusion(sim).to(device)
     with torch.no_grad():
-        coarse_geom = 1.0 - 0.9 * Xtest
-        lowfi = fractional_error(peds.solver(coarse_geom), ytest)
+        lowfi = fractional_error(solver(1.0 - 0.9 * Xtest), ytest)
 
     return {
         "name": name,
         "epochs": ep_p, "fe_peds": fe_p, "fe_nn": fe_b,
         "final_peds": fe_p[-1], "final_nn": fe_b[-1], "lowfi": lowfi,
-        "w": float(peds.weight().item()),
+        "w": w_val, "n_ensemble": n_ensemble,
     }
 
 
@@ -219,3 +274,80 @@ def plot_replication_tables(results, save_dir="./figs"):
         fig.tight_layout(); fig.savefig(path, dpi=130, bbox_inches="tight"); plt.show()
         paths.append(path)
     return paths
+
+
+# ----------------------- sweep de tamanho de treino (eficiência de dados) -----------------------
+def run_size_sweep(name, data_root, sizes=(256, 512, 1024, 2048, 4096), device="cpu",
+                   epochs=200, lr=5e-5, batch=64, seed=0):
+    """Treina PEDS e NN-only em vários tamanhos N de treino e devolve o FE final
+    de cada um. É o análogo da Fig. 3 (FE × nº de pontos): mostra se o PEDS
+    atinge um erro-alvo com muito menos dados que o baseline."""
+    cfg = EXPERIMENTS[name]; res = cfg["res"]; sim = DiffusionSim(res)
+    (Xt, yt), _, (Xtest, ytest) = load_data(data_root, cfg["data"], device)
+    pool = Xt.shape[0]
+    out = {"name": name, "sizes": [], "fe_peds": [], "fe_nn": []}
+    cw0 = 0.05 if "Fourier" in name else 0.45
+    for N in sizes:
+        if N > pool:
+            print(f"  (pulando N={N}: pool de treino só tem {pool})"); continue
+        XtN, ytN = Xt[:N], yt[:N]
+        torch.manual_seed(seed)
+        peds = DiffusionPEDS(res, sim, cw_init=cw0).to(device)
+        _, fp = _train_one(peds, XtN, ytN, Xtest, ytest, epochs, lr, batch, track_every=epochs)
+        torch.manual_seed(seed)
+        base = DiffusionBaseline(res).to(device)
+        _, fb = _train_one(base, XtN, ytN, Xtest, ytest, epochs, lr, batch, track_every=epochs)
+        out["sizes"].append(N); out["fe_peds"].append(fp[-1]); out["fe_nn"].append(fb[-1])
+        print(f"  N={N:5d}: PEDS={fp[-1]:.3f}  NN-only={fb[-1]:.3f}")
+    return out
+
+
+def plot_size_sweep(sweep, target=0.05, save_dir="./figs"):
+    """Plota FE × nº de pontos (loglog), PEDS vs NN-only, com a linha do erro-alvo."""
+    os.makedirs(save_dir, exist_ok=True)
+    fig, ax = plt.subplots(figsize=(6, 4))
+    ax.loglog(sweep["sizes"], sweep["fe_nn"], "--", color="#1f77b4", marker="x", label="NN-only")
+    ax.loglog(sweep["sizes"], sweep["fe_peds"], "-", color="#d62728", marker="o", ms=4, label="PEDS")
+    ax.axhline(target, color="gray", ls=":", label=f"erro-alvo {target*100:.0f}%")
+    ax.set_xlabel("nº de pontos de treino"); ax.set_ylabel("Fractional Error (teste)")
+    ax.set_title(f"Eficiência de dados — {sweep['name']}")
+    ax.legend(); ax.grid(alpha=0.3, which="both")
+    path = os.path.join(save_dir, f"size_sweep_{sweep['name'].replace('(','').replace(')','')}.png")
+    fig.tight_layout(); fig.savefig(path, dpi=130); plt.show()
+    return path
+
+
+def plot_efficiency_table(sweeps, target=0.05, save_dir="./figs"):
+    """Veredito do 'mais com menos': a partir dos sweeps, mostra com quantos pontos
+    cada modelo atinge o erro-alvo e a economia de dados do PEDS sobre o NN-only."""
+    os.makedirs(save_dir, exist_ok=True)
+    rows = [["Modelo", f"N p/ PEDS≤{target*100:.0f}%", f"N p/ NN-only≤{target*100:.0f}%",
+             "economia de dados (PEDS)"]]
+    for sw in sweeps:
+        def first_below(fes):
+            for N, fe in zip(sw["sizes"], fes):
+                if fe <= target:
+                    return N
+            return None
+        npd, nnn = first_below(sw["fe_peds"]), first_below(sw["fe_nn"])
+        nmax = sw["sizes"][-1]
+        npd_s = str(npd) if npd else f"≥{nmax} (não atinge)"
+        nnn_s = str(nnn) if nnn else f"≥{nmax} (não atinge)"
+        if npd and nnn:
+            econ = f"{nnn / npd:.1f}×"
+        elif npd and not nnn:
+            econ = f">{nmax / npd:.1f}× (NN não atinge)"
+        else:
+            econ = "—"
+        rows.append([sw["name"], npd_s, nnn_s, econ])
+
+    fig, ax = plt.subplots(figsize=(9, 0.6 + 0.5 * len(rows)))
+    ax.axis("off")
+    tbl = ax.table(cellText=rows[1:], colLabels=rows[0], loc="center", cellLoc="center")
+    tbl.auto_set_font_size(False); tbl.set_fontsize(10); tbl.scale(1, 1.5)
+    for j in range(len(rows[0])):
+        tbl[0, j].set_facecolor("#333"); tbl[0, j].set_text_props(color="white", fontweight="bold")
+    ax.set_title(f"Eficiência de dados — quem atinge {target*100:.0f}% com menos pontos", pad=14, fontweight="bold")
+    path = os.path.join(save_dir, "tabela_eficiencia_dados.png")
+    fig.tight_layout(); fig.savefig(path, dpi=130, bbox_inches="tight"); plt.show()
+    return path
