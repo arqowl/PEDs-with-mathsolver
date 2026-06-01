@@ -18,7 +18,7 @@ from src.models.surrogate import PEDSModel, BaselineModel
 from src.models.losses import calculate_nll_loss
 from src.physics.geometry import SimulationDomain, epsilon_hole_layers
 from src.physics.fdfd import FDFDSolver
-from src.physics.differentiable_physics import DifferentiableMaxwell
+from src.physics.maxwell_solver import DifferentiableMaxwell
 
 
 def _fe_complex(rp, ip, y):
