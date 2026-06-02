@@ -237,21 +237,26 @@ def plot_learning_curve(result, save_dir="./figs"):
 
 
 def plot_replication_tables(results, save_dir="./figs"):
-    """results: dict {nome: {final_peds, final_nn, lowfi, ...}} para os 5 experimentos.
-    Reproduz Extended Data Table 2 (PEDS vs NN-only) e Table 3 (PEDS vs low-fidelity)."""
+    """Reproduz, no formato do artigo, apenas o que MEDIMOS de fato com os 10k pontos:
+      Tabela 2: PEDS(10³) vs NN-only(10³)  — replicado e paper lado a lado.
+                (sem colunas NN-only 10⁴/10⁵: os autores não disponibilizam >10k pontos)
+      Tabela 3: PEDS(10³), Low-fidelity, Improvement
+                (sem Speedup: exigiria o solver de alta-fidelidade para cronometrar)"""
     os.makedirs(save_dir, exist_ok=True)
     order = ["Fourier(16)", "Fourier(25)", "Fisher(16)", "Fisher(25)", "Maxwell(10)"]
     order = [n for n in order if n in results]
+    ke = max((results[n].get("n_ensemble", 1) for n in order), default=1)
+    tag = f"  [ensemble de {ke}]" if ke > 1 else "  [modelo único]"
 
-    # Tabela 2: PEDS vs NN-only (replicado e paper)
+    # Tabela 2: PEDS vs NN-only (10³), replicado e paper
     rows2 = [["Modelo", "PEDS (rep.)", "PEDS (paper)", "NN-only (rep.)", "NN-only (paper)"]]
     for n in order:
         r = results[n]; p = PAPER.get(n, {})
         rows2.append([n, f"{r['final_peds']*100:.1f}%", f"{p.get('peds',float('nan'))*100:.1f}%",
                       f"{r['final_nn']*100:.1f}%", f"{p.get('nn',float('nan'))*100:.1f}%"])
 
-    # Tabela 3: PEDS vs low-fidelity + melhoria
-    rows3 = [["Modelo", "PEDS (rep.)", "Low-fi (rep.)", "Low-fi (paper)", "Melhoria (rep.)"]]
+    # Tabela 3: PEDS vs low-fidelity + improvement
+    rows3 = [["Modelo", "PEDS (rep.)", "Low-fi (rep.)", "Low-fi (paper)", "Improvement (rep.)"]]
     for n in order:
         r = results[n]; p = PAPER.get(n, {})
         imp = r["lowfi"] / r["final_peds"] if r["final_peds"] > 0 else float("nan")
@@ -260,8 +265,8 @@ def plot_replication_tables(results, save_dir="./figs"):
 
     paths = []
     for rows, title, fname in [
-        (rows2, "Extended Data Table 2 — PEDS vs NN-only (FE no teste)", "tabela2_peds_vs_nn.png"),
-        (rows3, "Extended Data Table 3 — PEDS vs low-fidelity", "tabela3_peds_vs_lowfi.png"),
+        (rows2, "Tabela 2 — PEDS vs NN-only, FE no teste (10³ pontos)" + tag, "tabela2_peds_vs_nn.png"),
+        (rows3, "Tabela 3 — PEDS vs low-fidelity (10³ pontos)" + tag, "tabela3_peds_vs_lowfi.png"),
     ]:
         fig, ax = plt.subplots(figsize=(9, 0.6 + 0.5 * len(rows)))
         ax.axis("off")
@@ -278,27 +283,38 @@ def plot_replication_tables(results, save_dir="./figs"):
 
 # ----------------------- sweep de tamanho de treino (eficiência de dados) -----------------------
 def run_size_sweep(name, data_root, sizes=(256, 512, 1024, 2048, 4096), device="cpu",
-                   epochs=200, lr=5e-5, batch=64, seed=0):
+                   epochs=200, lr=5e-5, batch=64, seed=0, n_ensemble=1):
     """Treina PEDS e NN-only em vários tamanhos N de treino e devolve o FE final
     de cada um. É o análogo da Fig. 3 (FE × nº de pontos): mostra se o PEDS
-    atinge um erro-alvo com muito menos dados que o baseline."""
+    atinge um erro-alvo com muito menos dados que o baseline.
+    n_ensemble>1: cada ponto é a média de n_ensemble modelos (suaviza as curvas)."""
     cfg = EXPERIMENTS[name]; res = cfg["res"]; sim = DiffusionSim(res)
     (Xt, yt), _, (Xtest, ytest) = load_data(data_root, cfg["data"], device)
     pool = Xt.shape[0]
-    out = {"name": name, "sizes": [], "fe_peds": [], "fe_nn": []}
+    out = {"name": name, "sizes": [], "fe_peds": [], "fe_nn": [], "n_ensemble": n_ensemble}
     cw0 = 0.05 if "Fourier" in name else 0.45
     for N in sizes:
         if N > pool:
             print(f"  (pulando N={N}: pool de treino só tem {pool})"); continue
         XtN, ytN = Xt[:N], yt[:N]
-        torch.manual_seed(seed)
-        peds = DiffusionPEDS(res, sim, cw_init=cw0).to(device)
-        _, fp = _train_one(peds, XtN, ytN, Xtest, ytest, epochs, lr, batch, track_every=epochs)
-        torch.manual_seed(seed)
-        base = DiffusionBaseline(res).to(device)
-        _, fb = _train_one(base, XtN, ytN, Xtest, ytest, epochs, lr, batch, track_every=epochs)
-        out["sizes"].append(N); out["fe_peds"].append(fp[-1]); out["fe_nn"].append(fb[-1])
-        print(f"  N={N:5d}: PEDS={fp[-1]:.3f}  NN-only={fb[-1]:.3f}")
+        if n_ensemble == 1:
+            torch.manual_seed(seed)
+            peds = DiffusionPEDS(res, sim, cw_init=cw0).to(device)
+            _, fp = _train_one(peds, XtN, ytN, Xtest, ytest, epochs, lr, batch, track_every=epochs)
+            torch.manual_seed(seed)
+            base = DiffusionBaseline(res).to(device)
+            _, fb = _train_one(base, XtN, ytN, Xtest, ytest, epochs, lr, batch, track_every=epochs)
+            fe_p, fe_n = fp[-1], fb[-1]
+        else:                                   # média de n_ensemble modelos (como no paper)
+            _, fpe, _ = _train_ensemble(lambda: DiffusionPEDS(res, sim, cw_init=cw0).to(device),
+                                        n_ensemble, XtN, ytN, Xtest, ytest, epochs, lr, batch,
+                                        epochs, seed, ytest)
+            _, fbe, _ = _train_ensemble(lambda: DiffusionBaseline(res).to(device),
+                                        n_ensemble, XtN, ytN, Xtest, ytest, epochs, lr, batch,
+                                        epochs, seed, ytest)
+            fe_p, fe_n = fpe[-1], fbe[-1]
+        out["sizes"].append(N); out["fe_peds"].append(fe_p); out["fe_nn"].append(fe_n)
+        print(f"  N={N:5d}: PEDS={fe_p:.3f}  NN-only={fe_n:.3f}")
     return out
 
 
@@ -310,7 +326,9 @@ def plot_size_sweep(sweep, target=0.05, save_dir="./figs"):
     ax.loglog(sweep["sizes"], sweep["fe_peds"], "-", color="#d62728", marker="o", ms=4, label="PEDS")
     ax.axhline(target, color="gray", ls=":", label=f"erro-alvo {target*100:.0f}%")
     ax.set_xlabel("nº de pontos de treino"); ax.set_ylabel("Fractional Error (teste)")
-    ax.set_title(f"Eficiência de dados — {sweep['name']}")
+    ke = sweep.get("n_ensemble", 1)
+    suffix = f" (ensemble de {ke})" if ke > 1 else ""
+    ax.set_title(f"Eficiência de dados — {sweep['name']}{suffix}")
     ax.legend(); ax.grid(alpha=0.3, which="both")
     path = os.path.join(save_dir, f"size_sweep_{sweep['name'].replace('(','').replace(')','')}.png")
     fig.tight_layout(); fig.savefig(path, dpi=130); plt.show()
