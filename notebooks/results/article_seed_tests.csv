@@ -1,0 +1,113 @@
+scope,problem,N,contrast,statistic,p_value,median_delta_a_minus_b,n_pairs
+paired_seeds_at_N,Fisher(16),64,PEDS físico vs PEDS-afim,0.0,0.001953125,-0.1364,10
+paired_seeds_at_N,Fisher(16),64,PEDS físico vs NN-only,0.0,0.001953125,-0.03584999999999999,10
+paired_seeds_at_N,Fisher(16),64,PEDS-afim vs NN-only,0.0,0.001953125,0.09864999999999999,10
+friedman_seeds_at_N,Fisher(16),64,PEDS físico vs PEDS-afim vs NN-only,20.0,4.539992976248486e-05,,10
+paired_seeds_at_N,Fisher(16),128,PEDS físico vs PEDS-afim,0.0,0.001953125,-0.1372,10
+paired_seeds_at_N,Fisher(16),128,PEDS físico vs NN-only,0.0,0.001953125,-0.044149999999999995,10
+paired_seeds_at_N,Fisher(16),128,PEDS-afim vs NN-only,0.0,0.001953125,0.0966,10
+friedman_seeds_at_N,Fisher(16),128,PEDS físico vs PEDS-afim vs NN-only,20.0,4.539992976248486e-05,,10
+paired_seeds_at_N,Fisher(16),256,PEDS físico vs PEDS-afim,0.0,0.001953125,-0.10984999999999999,10
+paired_seeds_at_N,Fisher(16),256,PEDS físico vs NN-only,0.0,0.001953125,-0.042550000000000004,10
+paired_seeds_at_N,Fisher(16),256,PEDS-afim vs NN-only,1.0,0.00390625,0.06504999999999998,10
+friedman_seeds_at_N,Fisher(16),256,PEDS físico vs PEDS-afim vs NN-only,18.200000000000017,0.0001116658084901137,,10
+paired_seeds_at_N,Fisher(16),512,PEDS físico vs PEDS-afim,0.0,0.001953125,-0.03675,10
+paired_seeds_at_N,Fisher(16),512,PEDS físico vs NN-only,0.0,0.001953125,-0.03795,10
+paired_seeds_at_N,Fisher(16),512,PEDS-afim vs NN-only,21.0,0.556640625,-0.003050000000000004,10
+friedman_seeds_at_N,Fisher(16),512,PEDS físico vs PEDS-afim vs NN-only,15.200000000000017,0.0005004514334406062,,10
+paired_seeds_at_N,Fisher(16),1024,PEDS físico vs PEDS-afim,0.0,0.001953125,-0.0208,10
+paired_seeds_at_N,Fisher(16),1024,PEDS físico vs NN-only,0.0,0.001953125,-0.0355,10
+paired_seeds_at_N,Fisher(16),1024,PEDS-afim vs NN-only,24.0,0.75,-0.013300000000000006,10
+friedman_seeds_at_N,Fisher(16),1024,PEDS físico vs PEDS-afim vs NN-only,15.800000000000011,0.0003707435404590862,,10
+paired_seeds_at_N,Fisher(16),2048,PEDS físico vs PEDS-afim,0.0,0.001953125,-0.007950000000000002,10
+paired_seeds_at_N,Fisher(16),2048,PEDS físico vs NN-only,0.0,0.001953125,-0.03949999999999999,10
+paired_seeds_at_N,Fisher(16),2048,PEDS-afim vs NN-only,0.0,0.001953125,-0.03215,10
+friedman_seeds_at_N,Fisher(16),2048,PEDS físico vs PEDS-afim vs NN-only,20.0,4.539992976248486e-05,,10
+paired_seeds_at_N,Fisher(16),4096,PEDS físico vs PEDS-afim,7.0,0.037109375,0.0027500000000000024,10
+paired_seeds_at_N,Fisher(16),4096,PEDS físico vs NN-only,0.0,0.001953125,-0.05135,10
+paired_seeds_at_N,Fisher(16),4096,PEDS-afim vs NN-only,0.0,0.001953125,-0.0548,10
+friedman_seeds_at_N,Fisher(16),4096,PEDS físico vs PEDS-afim vs NN-only,18.200000000000017,0.0001116658084901137,,10
+paired_seeds_at_N,Fisher(25),64,PEDS físico vs PEDS-afim,0.0,0.001953125,-0.15185,10
+paired_seeds_at_N,Fisher(25),64,PEDS físico vs NN-only,0.0,0.001953125,-0.0526,10
+paired_seeds_at_N,Fisher(25),64,PEDS-afim vs NN-only,0.0,0.001953125,0.10155,10
+friedman_seeds_at_N,Fisher(25),64,PEDS físico vs PEDS-afim vs NN-only,20.0,4.539992976248486e-05,,10
+paired_seeds_at_N,Fisher(25),128,PEDS físico vs PEDS-afim,0.0,0.001953125,-0.12955,10
+paired_seeds_at_N,Fisher(25),128,PEDS físico vs NN-only,0.0,0.001953125,-0.042899999999999994,10
+paired_seeds_at_N,Fisher(25),128,PEDS-afim vs NN-only,0.0,0.001953125,0.084,10
+friedman_seeds_at_N,Fisher(25),128,PEDS físico vs PEDS-afim vs NN-only,20.0,4.539992976248486e-05,,10
+paired_seeds_at_N,Fisher(25),256,PEDS físico vs PEDS-afim,0.0,0.001953125,-0.0878,10
+paired_seeds_at_N,Fisher(25),256,PEDS físico vs NN-only,0.0,0.001953125,-0.04919999999999999,10
+paired_seeds_at_N,Fisher(25),256,PEDS-afim vs NN-only,9.0,0.064453125,0.038050000000000014,10
+friedman_seeds_at_N,Fisher(25),256,PEDS físico vs PEDS-afim vs NN-only,15.800000000000011,0.0003707435404590862,,10
+paired_seeds_at_N,Fisher(25),512,PEDS físico vs PEDS-afim,0.0,0.001953125,-0.03515,10
+paired_seeds_at_N,Fisher(25),512,PEDS físico vs NN-only,0.0,0.001953125,-0.048749999999999995,10
+paired_seeds_at_N,Fisher(25),512,PEDS-afim vs NN-only,14.0,0.193359375,-0.01405,10
+friedman_seeds_at_N,Fisher(25),512,PEDS físico vs PEDS-afim vs NN-only,16.80000000000001,0.00022486732417884692,,10
+paired_seeds_at_N,Fisher(25),1024,PEDS físico vs PEDS-afim,0.0,0.001953125,-0.018130793786048843,10
+paired_seeds_at_N,Fisher(25),1024,PEDS físico vs NN-only,0.0,0.001953125,-0.04905300482511515,10
+paired_seeds_at_N,Fisher(25),1024,PEDS-afim vs NN-only,9.0,0.064453125,-0.02980504184961319,10
+friedman_seeds_at_N,Fisher(25),1024,PEDS físico vs PEDS-afim vs NN-only,18.200000000000017,0.0001116658084901137,,10
+paired_seeds_at_N,Fisher(25),2048,PEDS físico vs PEDS-afim,0.0,0.001953125,-0.00537275150418285,10
+paired_seeds_at_N,Fisher(25),2048,PEDS físico vs NN-only,0.0,0.001953125,-0.050867237150669126,10
+paired_seeds_at_N,Fisher(25),2048,PEDS-afim vs NN-only,0.0,0.001953125,-0.042978961020708084,10
+friedman_seeds_at_N,Fisher(25),2048,PEDS físico vs PEDS-afim vs NN-only,20.0,4.539992976248486e-05,,10
+paired_seeds_at_N,Fisher(25),4096,PEDS físico vs PEDS-afim,22.0,0.625,0.00034893862903118134,10
+paired_seeds_at_N,Fisher(25),4096,PEDS físico vs NN-only,0.0,0.001953125,-0.05845607444643974,10
+paired_seeds_at_N,Fisher(25),4096,PEDS-afim vs NN-only,0.0,0.001953125,-0.05954590626060963,10
+friedman_seeds_at_N,Fisher(25),4096,PEDS físico vs PEDS-afim vs NN-only,15.200000000000017,0.0005004514334406062,,10
+paired_seeds_at_N,Fourier(16),64,PEDS físico vs PEDS-afim,0.0,0.001953125,-0.44345,10
+paired_seeds_at_N,Fourier(16),64,PEDS físico vs NN-only,0.0,0.001953125,-0.027550000000000005,10
+paired_seeds_at_N,Fourier(16),64,PEDS-afim vs NN-only,0.0,0.001953125,0.4164,10
+friedman_seeds_at_N,Fourier(16),64,PEDS físico vs PEDS-afim vs NN-only,20.0,4.539992976248486e-05,,10
+paired_seeds_at_N,Fourier(16),128,PEDS físico vs PEDS-afim,0.0,0.001953125,-0.2045,10
+paired_seeds_at_N,Fourier(16),128,PEDS físico vs NN-only,0.0,0.001953125,-0.030100000000000002,10
+paired_seeds_at_N,Fourier(16),128,PEDS-afim vs NN-only,0.0,0.001953125,0.17414999999999997,10
+friedman_seeds_at_N,Fourier(16),128,PEDS físico vs PEDS-afim vs NN-only,20.0,4.539992976248486e-05,,10
+paired_seeds_at_N,Fourier(16),256,PEDS físico vs PEDS-afim,0.0,0.001953125,-0.13745000000000002,10
+paired_seeds_at_N,Fourier(16),256,PEDS físico vs NN-only,0.0,0.001953125,-0.017750000000000002,10
+paired_seeds_at_N,Fourier(16),256,PEDS-afim vs NN-only,0.0,0.001953125,0.1197,10
+friedman_seeds_at_N,Fourier(16),256,PEDS físico vs PEDS-afim vs NN-only,20.0,4.539992976248486e-05,,10
+paired_seeds_at_N,Fourier(16),512,PEDS físico vs PEDS-afim,0.0,0.001953125,-0.10740000000000001,10
+paired_seeds_at_N,Fourier(16),512,PEDS físico vs NN-only,25.0,0.826171875,-0.0004000000000000045,10
+paired_seeds_at_N,Fourier(16),512,PEDS-afim vs NN-only,0.0,0.001953125,0.11135,10
+friedman_seeds_at_N,Fourier(16),512,PEDS físico vs PEDS-afim vs NN-only,15.0,0.0005530843701478337,,10
+paired_seeds_at_N,Fourier(16),1024,PEDS físico vs PEDS-afim,23.0,0.6953125,-0.0017499999999999946,10
+paired_seeds_at_N,Fourier(16),1024,PEDS físico vs NN-only,7.0,0.037109375,0.0121,10
+paired_seeds_at_N,Fourier(16),1024,PEDS-afim vs NN-only,13.0,0.16015625,0.015149999999999997,10
+friedman_seeds_at_N,Fourier(16),1024,PEDS físico vs PEDS-afim vs NN-only,1.4000000000000057,0.496585303791408,,10
+paired_seeds_at_N,Fourier(16),2048,PEDS físico vs PEDS-afim,0.0,0.001953125,0.038400000000000004,10
+paired_seeds_at_N,Fourier(16),2048,PEDS físico vs NN-only,3.0,0.009765625,0.016849999999999997,10
+paired_seeds_at_N,Fourier(16),2048,PEDS-afim vs NN-only,0.0,0.001953125,-0.021900000000000006,10
+friedman_seeds_at_N,Fourier(16),2048,PEDS físico vs PEDS-afim vs NN-only,18.200000000000017,0.0001116658084901137,,10
+paired_seeds_at_N,Fourier(16),4096,PEDS físico vs PEDS-afim,0.0,0.001953125,0.05335,10
+paired_seeds_at_N,Fourier(16),4096,PEDS físico vs NN-only,3.0,0.009765625,0.01639999999999999,10
+paired_seeds_at_N,Fourier(16),4096,PEDS-afim vs NN-only,0.0,0.001953125,-0.03395,10
+friedman_seeds_at_N,Fourier(16),4096,PEDS físico vs PEDS-afim vs NN-only,18.200000000000017,0.0001116658084901137,,10
+paired_seeds_at_N,Fourier(25),64,PEDS físico vs PEDS-afim,0.0,0.001953125,-0.27880000000000005,10
+paired_seeds_at_N,Fourier(25),64,PEDS físico vs NN-only,0.0,0.001953125,-0.0399,10
+paired_seeds_at_N,Fourier(25),64,PEDS-afim vs NN-only,0.0,0.001953125,0.2415,10
+friedman_seeds_at_N,Fourier(25),64,PEDS físico vs PEDS-afim vs NN-only,20.0,4.539992976248486e-05,,10
+paired_seeds_at_N,Fourier(25),128,PEDS físico vs PEDS-afim,0.0,0.001953125,-0.1623,10
+paired_seeds_at_N,Fourier(25),128,PEDS físico vs NN-only,0.0,0.001953125,-0.03704999999999999,10
+paired_seeds_at_N,Fourier(25),128,PEDS-afim vs NN-only,0.0,0.001953125,0.1258,10
+friedman_seeds_at_N,Fourier(25),128,PEDS físico vs PEDS-afim vs NN-only,20.0,4.539992976248486e-05,,10
+paired_seeds_at_N,Fourier(25),256,PEDS físico vs PEDS-afim,0.0,0.001953125,-0.14265,10
+paired_seeds_at_N,Fourier(25),256,PEDS físico vs NN-only,0.0,0.001953125,-0.03275,10
+paired_seeds_at_N,Fourier(25),256,PEDS-afim vs NN-only,3.0,0.009765625,0.10885,10
+friedman_seeds_at_N,Fourier(25),256,PEDS físico vs PEDS-afim vs NN-only,16.80000000000001,0.00022486732417884692,,10
+paired_seeds_at_N,Fourier(25),512,PEDS físico vs PEDS-afim,3.0,0.009765625,-0.0898,10
+paired_seeds_at_N,Fourier(25),512,PEDS físico vs NN-only,0.0,0.001953125,-0.027450000000000002,10
+paired_seeds_at_N,Fourier(25),512,PEDS-afim vs NN-only,10.0,0.083984375,0.06285,10
+friedman_seeds_at_N,Fourier(25),512,PEDS físico vs PEDS-afim vs NN-only,12.200000000000017,0.0022428677194857843,,10
+paired_seeds_at_N,Fourier(25),1024,PEDS físico vs PEDS-afim,5.0,0.01953125,-0.003700000000000002,10
+paired_seeds_at_N,Fourier(25),1024,PEDS físico vs NN-only,0.0,0.001953125,-0.03655,10
+paired_seeds_at_N,Fourier(25),1024,PEDS-afim vs NN-only,3.0,0.009765625,-0.03145,10
+friedman_seeds_at_N,Fourier(25),1024,PEDS físico vs PEDS-afim vs NN-only,12.800000000000011,0.0016615572731739255,,10
+paired_seeds_at_N,Fourier(25),2048,PEDS físico vs PEDS-afim,16.0,0.275390625,0.001850000000000001,10
+paired_seeds_at_N,Fourier(25),2048,PEDS físico vs NN-only,0.0,0.001953125,-0.044899999999999995,10
+paired_seeds_at_N,Fourier(25),2048,PEDS-afim vs NN-only,0.0,0.001953125,-0.04485,10
+friedman_seeds_at_N,Fourier(25),2048,PEDS físico vs PEDS-afim vs NN-only,15.800000000000011,0.0003707435404590862,,10
+paired_seeds_at_N,Fourier(25),4096,PEDS físico vs PEDS-afim,17.0,0.322265625,-0.0006499999999999978,10
+paired_seeds_at_N,Fourier(25),4096,PEDS físico vs NN-only,0.0,0.001953125,-0.051699999999999996,10
+paired_seeds_at_N,Fourier(25),4096,PEDS-afim vs NN-only,0.0,0.001953125,-0.050100000000000006,10
+friedman_seeds_at_N,Fourier(25),4096,PEDS físico vs PEDS-afim vs NN-only,15.0,0.0005530843701478337,,10

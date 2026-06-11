@@ -1,73 +1,84 @@
-# Módulo de Telemetria e Monitoramento de Hardware para Deep Learning
+# PEDS-afim
 
-Este módulo provê um **sistema de telemetria automatizado e agnóstico** encapsulado na classe `MonitorTreinamento` (localizada em `src/telemetria.py`). O objetivo principal é monitorar, metrificar e documentar a saúde do hardware (especialmente GPUs NVIDIA via API nativa NVML) e o desempenho computacional de modelos de IA ao longo do treinamento.
+Este repositório implementa o protocolo experimental do artigo **Avaliação Estatística da Eficiência de Dados do PEDS: Uma Abordagem Estrutural com um Surrogate de Baixa Fidelidade Não-Físico**.
 
-Toda vez que um experimento é executado, o módulo gera relatórios dinâmicos no terminal e exporta uma planilha estruturada em formato `.csv` para auditoria posterior, eliminando a necessidade de monitoramento manual via terminais externos.
+O objetivo é testar se a eficiência de dados do PEDS depende da física embutida no solver low-fidelity ou se pode ser explicada pelo acoplamento estrutural entre gerador neural, geometria coarse e gargalo de baixa fidelidade.
 
----
+## Modelos Comparados
 
-## 📊 Métricas Coletadas
+- **PEDS físico**: gerador neural + mistura com geometria coarse + solver de difusão diferenciável.
+- **PEDS-afim**: mesmo gerador e mesma mistura coarse, mas substitui o solver físico por uma leitura afim `kappa = a^T geom + b`.
+- **NN-only**: baseline puramente data-driven do artigo original.
 
-O monitor divide as métricas em duas categorias essenciais:
+## Benchmarks
 
-### 1. Metadados do Ambiente (Estáticos)
-* **Sistema Operacional:** Identificação da versão e build do SO hospedeiro (ex: Windows 11, Ubuntu 20.04).
-* **Especificação do Hardware:** Nome oficial da GPU detectada pelo ecossistema CUDA (ex: NVIDIA GeForce RTX 4060).
-* **Identidade do Modelo:** Nome da classe do modelo Python e contagem total de parâmetros (pesos e vieses) em tempo real.
+O protocolo usa os benchmarks de difusão do PEDS original:
 
-### 2. Telemetria Temporal (Dinâmicas por Época)
-* **Tempo de Execução:** Duração exata do processamento da época em segundos.
-* **Distribuição de VRAM (Balanço 100%):**
-  * **VRAM IA:** Memória explicitamente alocada pelo PyTorch para o modelo e ativações.
-  * **VRAM SO:** Memória consumida pelo Sistema Operacional e processos de background.
-  * **VRAM Livre:** Margem de segurança disponível na placa de vídeo.
-* **Porcentagens Relativas:** Mapeamento percentual de consumo das três fatias acima em relação à capacidade total da GPU.
-* **Temperatura:** Sensor térmico direto do núcleo da GPU em graus Celsius (°C).
+- `Fourier(16)`
+- `Fourier(25)`
+- `Fisher(16)`
+- `Fisher(25)`
 
----
+Cada base tem 10.000 amostras. O split fixo é:
 
-## 🛠️ Pré-requisitos
+- validação: primeiras 1.024 amostras;
+- teste: últimas 1.024 amostras;
+- treino: bloco intermediário, sem vazamento para o teste.
 
-O ambiente configurado via **Dev Containers** (`.devcontainer.json`) já traz todas as dependências nativas. Caso precise validar o ambiente localmente, certifique-se de incluir no seu `requirements.txt`:
+## Protocolo
+
+O experimento principal varre:
 
 ```text
-pandas>=2.0.0
-torch>=2.1.0
-pynvml>=13.0.1
+N = 64, 128, 256, 512, 1024, 2048, 4096
+seeds = 0..9
+batch = 64
+optimizer = Adam
+loss = Huber
+metric = Fractional Error
 ```
 
----
+O treino usa early stopping por validação. O pipeline gera:
 
-## 🚀 Como Usar o Monitor de Telemetria
+- resultados granulares por problema, modelo, `N` e seed;
+- curvas `FE x N`;
+- expoentes de escala `FE ~ N^alpha`;
+- testes de Wilcoxon e Friedman;
+- figuras e tabelas para as seções 4 e 5 do artigo.
 
-O projeto conta com um gerenciador automático de logs de hardware (`src/telemetria.py`) focado em capturar o comportamento térmico e de consumo (CPU, RAM e GPU) durante o treinamento de modelos.
+## Como Rodar
 
-Para utilizá-lo no seu notebook ou script de treino, basta seguir o exemplo abaixo:
+Pelo notebook:
 
-```python
-import time
-import torch.nn as nn
-from src.telemetria import MonitorTreinamento
-
-# 1. Definir a sua arquitetura de IA
-modelo_ia = nn.Sequential(
-    nn.Linear(100, 50),
-    nn.ReLU(),
-    nn.Linear(50, 10)
-)
-
-# 2. Instanciar o monitor
-monitor = MonitorTreinamento(modelo_ia)
-
-# 3. Loop de Treinamento
-for epoca in range(1, 4):
-    monitor.iniciar_epoca()  # Dispara o cronômetro e zera medidores de CPU
-
-    # [Seu processo real de treinamento acontece aqui]
-    time.sleep(2.5)  
-
-    monitor.finalizar_epoca(epoca)  # Captura tempo, uso de CPU/RAM e temperatura da GPU
-
-# 4. Exportar os resultados consolidados para a pasta ./logs
-monitor.salvar_logs()
+```text
+notebooks/run_all_experiments.ipynb
 ```
+
+Pelo terminal:
+
+```bash
+python run_all_experiments.py
+```
+
+Para um teste rápido de sanidade:
+
+```bash
+PEDS_SMOKE=1 python run_all_experiments.py
+```
+
+Os artefatos são salvos em:
+
+- `notebooks/results/`
+- `notebooks/figs/`
+
+## Estrutura
+
+- `src/peds_experiments.py`: modelos Fourier/Fisher, PEDS-afim, treino, sweeps, estatística e plots.
+- `src/physics/diffusion_solver.py`: solver coarse de difusão diferenciável.
+- `notebooks/run_all_experiments.ipynb`: execução principal do protocolo do artigo.
+- `zfiles/PEDs-afim.pdf`: manuscrito da proposta.
+- `zfiles/Physics-enhanced deep surrogates for PDEs.pdf`: artigo PEDS original.
+
+## Telemetria
+
+O módulo `src/telemetria.py` ainda está disponível para monitorar CPU, RAM, GPU e tempo por época, mas a telemetria não faz parte do protocolo estatístico principal do artigo.

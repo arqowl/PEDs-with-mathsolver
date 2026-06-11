@@ -1,0 +1,17 @@
+scope,problem,N,contrast,statistic,p_value,median_delta_a_minus_b,n_pairs
+global_problem_N,all,all,PEDS físico vs PEDS-afim,37.0,4.2110681533813477e-05,-0.06175000000000001,28
+global_problem_N,all,all,PEDS físico vs NN-only,9.0,2.4586915969848633e-07,-0.0388,28
+global_problem_N,all,all,PEDS-afim vs NN-only,108.0,0.029833190143108368,0.02560000000000001,28
+global_problem_N,all,all,PEDS físico vs PEDS-afim vs NN-only,21.428571428571388,2.2225156959696388e-05,,28
+curve_over_N,Fisher(16),all,PEDS físico vs PEDS-afim,1.0,0.03125,-0.03620000000000001,7
+curve_over_N,Fisher(16),all,PEDS físico vs NN-only,0.0,0.015625,-0.039499999999999987,7
+curve_over_N,Fisher(16),all,PEDS-afim vs NN-only,10.0,0.578125,-0.001899999999999999,7
+curve_over_N,Fisher(25),all,PEDS físico vs PEDS-afim,1.0,0.03125,-0.035449999999999995,7
+curve_over_N,Fisher(25),all,PEDS físico vs NN-only,0.0,0.015625,-0.04984999999999998,7
+curve_over_N,Fisher(25),all,PEDS-afim vs NN-only,12.0,0.8125,-0.013999999999999999,7
+curve_over_N,Fourier(16),all,PEDS físico vs PEDS-afim,5.0,0.15625,-0.1074,7
+curve_over_N,Fourier(16),all,PEDS físico vs NN-only,9.0,0.46875,-0.0003500000000000031,7
+curve_over_N,Fourier(16),all,PEDS-afim vs NN-only,5.0,0.15625,0.10704999999999999,7
+curve_over_N,Fourier(25),all,PEDS físico vs PEDS-afim,2.0,0.046875,-0.08795,7
+curve_over_N,Fourier(25),all,PEDS físico vs NN-only,0.0,0.015625,-0.0369,7
+curve_over_N,Fourier(25),all,PEDS-afim vs NN-only,6.0,0.21875,0.06440000000000001,7
